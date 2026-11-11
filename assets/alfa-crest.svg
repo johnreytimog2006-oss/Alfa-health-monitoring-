@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" class="w-full h-full">
+  <!-- Outer Gold Laurel / Shield Background -->
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCE570"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#AA7C11"/>
+    </linearGradient>
+    <linearGradient id="crimsonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B91C1C"/>
+      <stop offset="100%" stop-color="#7F1D1D"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Crossed Sabers in Background -->
+  <g stroke="url(#goldGrad)" stroke-width="3" stroke-linecap="round">
+    <!-- Saber 1 -->
+    <line x1="30" y1="170" x2="170" y2="30"/>
+    <line x1="35" y1="165" x2="45" y2="155"/>
+    <!-- Saber 2 -->
+    <line x1="170" y1="170" x2="30" y2="30"/>
+    <line x1="165" y1="165" x2="155" y2="155"/>
+  </g>
+
+  <!-- Main Military Shield -->
+  <path d="M100 25 C145 25 170 45 170 85 C170 135 100 175 100 175 C100 175 30 135 30 85 C30 45 55 25 100 25 Z" 
+        fill="url(#blueGrad)" stroke="url(#goldGrad)" stroke-width="4" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))"/>
+
+  <!-- Inner Crimson Chevron -->
+  <path d="M100 35 C135 35 158 52 158 85 C158 126 100 160 100 160 C100 160 42 126 42 85 C42 52 65 35 100 35 Z" 
+        fill="url(#crimsonGrad)" stroke="url(#goldGrad)" stroke-width="2" opacity="0.95"/>
+
+  <!-- 8-Ray Philippine Sun in Center -->
+  <g transform="translate(100, 85)">
+    <!-- Sun Core -->
+    <circle r="16" fill="url(#goldGrad)" stroke="#FFE873" stroke-width="1"/>
+    <!-- 8 Sun Rays -->
+    <g fill="url(#goldGrad)">
+      <polygon points="0,-26 -3,-18 3,-18"/>
+      <polygon points="0,26 -3,18 3,18"/>
+      <polygon points="-26,0 -18,-3 -18,3"/>
+      <polygon points="26,0 18,-3 18,3"/>
+      <polygon points="-18,-18 -16,-10 -10,-16"/>
+      <polygon points="18,-18 16,-10 10,-16"/>
+      <polygon points="-18,18 -16,10 -10,16"/>
+      <polygon points="18,18 16,10 10,16"/>
+    </g>
+    <!-- 3 Stars -->
+    <polygon points="0,-4 1.2,-1 4,-1 1.8,0.5 2.6,3.5 0,1.8 -2.6,3.5 -1.8,0.5 -4,-1 -1.2,-1" fill="#FFFFFF" transform="translate(0, -32) scale(1.6)"/>
+    <polygon points="0,-4 1.2,-1 4,-1 1.8,0.5 2.6,3.5 0,1.8 -2.6,3.5 -1.8,0.5 -4,-1 -1.2,-1" fill="#FFFFFF" transform="translate(-28, 22) scale(1.6)"/>
+    <polygon points="0,-4 1.2,-1 4,-1 1.8,0.5 2.6,3.5 0,1.8 -2.6,3.5 -1.8,0.5 -4,-1 -1.2,-1" fill="#FFFFFF" transform="translate(28, 22) scale(1.6)"/>
+  </g>
+
+  <!-- Alfa Company Motto Ribbon -->
+  <path d="M45 150 Q100 168 155 150 L158 162 Q100 182 42 162 Z" fill="url(#goldGrad)" stroke="#78350F" stroke-width="1"/>
+  <text x="100" y="162" text-anchor="middle" font-family="'Share Tech Mono', monospace" font-size="8.5" font-weight="900" fill="#451A03" letter-spacing="1.5">ALFA COMPANY</text>
+</svg>

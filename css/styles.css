@@ -1,0 +1,231 @@
+/* Alfa Company Health Monitoring — Live Symptom Surveillance Stylesheet
+ * Combines Pastel Telemetry Aesthetics with Real-Time Operational Components
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+:root {
+  --canvas-bg: radial-gradient(circle at 10% 10%, #FAF8FF 0%, #F3F1FD 50%, #FAF5F8 100%);
+  --card-bg: #FFFFFF;
+  --subtle-bg: #F8F7FD;
+  --border-color: #ECEBF5;
+}
+
+body {
+  background: var(--canvas-bg);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mono-tabular {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9D6EC;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B7B2DD;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth SVG radial gauge animation */
+.gauge-circle {
+  transition: stroke-dashoffset 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Active navigation & filter pills */
+.pill-active {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.35);
+}
+
+.nav-active {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 8px 20px -2px rgba(139, 92, 246, 0.32);
+}
+
+.nav-active i {
+  color: #FFFFFF !important;
+}
+
+/* Pulsing Live Beacon */
+@keyframes softBeacon {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.live-beacon {
+  animation: softBeacon 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Continuous Horizontal Live Marquee Ticker */
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  width: 100%;
+  mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+}
+
+.marquee-track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: marqueeTicker 46s linear infinite;
+  will-change: transform;
+}
+
+.marquee-container:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes marqueeTicker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* Subtle section transitions */
+.section-fade {
+  animation: sectionFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sectionFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================================
+ * NIGHT OPS DARK MODE (Alfa Company Health Monitoring)
+ * ========================================================================= */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background: radial-gradient(circle at 12% 10%, #0f172a 0%, #070c16 55%, #0b0f1d 100%) !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark aside,
+html.dark header,
+html.dark .ticker-bar {
+  background-color: rgba(13, 21, 36, 0.92) !important;
+  border-color: #1e293b !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/90,
+html.dark .bg-white\/95,
+html.dark .bg-white\/70 {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-pastel-subtle {
+  background-color: #162033 !important;
+}
+
+html.dark .bg-pastel-lavender\/40,
+html.dark .bg-pastel-lavender\/50,
+html.dark .bg-pastel-lavender\/20 {
+  background-color: rgba(139, 92, 246, 0.14) !important;
+}
+
+html.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+html.dark .border-pastel-border,
+html.dark .border-pastel-border\/80,
+html.dark .border-pastel-border\/70,
+html.dark .border-pastel-border\/60,
+html.dark .border-slate-100,
+html.dark .border-slate-200 {
+  border-color: #1e293b !important;
+}
+
+html.dark .divide-slate-100 > * + * {
+  border-color: #1e293b !important;
+}
+
+html.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+html.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+html.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+html.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.dark input[type="text"],
+html.dark input[type="url"],
+html.dark input[type="number"],
+html.dark select,
+html.dark textarea {
+  background-color: #0b1322 !important;
+  border-color: #24324a !important;
+  color: #f8fafc !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}

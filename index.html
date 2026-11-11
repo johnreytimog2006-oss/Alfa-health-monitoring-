@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alfa Company Health Monitoring &mdash; Live Symptom Surveillance</title>
+  <meta name="description" content="Real-time Alfa Company Health monitoring and symptom surveillance portal, synchronized live with Google Sheets.">
+
+  <!-- Alfa Company Health Favicon -->
+  <link rel="icon" type="image/png" href="assets/alfa-logo.png">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for Symptom Visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            pastel: {
+              canvas: '#F5F4FA',
+              card: '#FFFFFF',
+              subtle: '#F8F7FD',
+              border: '#ECEBF5',
+              lavender: '#EDE8FD',
+              purple: '#8B5CF6',
+              'purple-dark': '#7033F0',
+              'purple-light': '#F6EEFF',
+              periwinkle: '#6366F1',
+              cobalt: '#3B82F6',
+              coral: '#FF6F91',
+              blush: '#FFF0F5',
+              fever: '#FF4757',
+              lime: '#10B981',
+              amber: '#F59E0B'
+            }
+          },
+          boxShadow: {
+            'soft': '0 10px 30px -5px rgba(139, 92, 246, 0.06), 0 4px 14px -2px rgba(0, 0, 0, 0.02)',
+            'soft-card': '0 14px 34px -6px rgba(139, 92, 246, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.03)',
+            'soft-lg': '0 24px 48px -12px rgba(139, 92, 246, 0.14), 0 8px 18px -4px rgba(0, 0, 0, 0.04)',
+            'pill': '0 8px 20px -2px rgba(139, 92, 246, 0.35)',
+            'pill-subtle': '0 4px 12px rgba(139, 92, 246, 0.12)',
+            'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Sync theme immediately to avoid dark-mode flash -->
+  <script>
+    try {
+      if (localStorage.getItem('alfa_health_theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    } catch (_) {}
+  </script>
+
+  <link rel="stylesheet" href="css/styles.css?v=1.0">
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex selection:bg-purple-200 selection:text-purple-900 overflow-x-hidden">
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebarOverlay" onclick="closeMobileSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden"></div>
+
+  <!-- ========================================================================= -->
+  <!-- 1. LEFT SIDEBAR (RESPONSIVE DRAWER ON MOBILE, STICKY ON DESKTOP) -->
+  <!-- ========================================================================= -->
+  <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-40 w-72 bg-white/95 backdrop-blur-xl border-r border-pastel-border/80 flex flex-col justify-between shrink-0 p-5 -translate-x-full lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen transition-transform duration-300 shadow-soft overflow-y-auto">
+    <div>
+      <!-- Brand Logo / Alfa Company Health Monitoring -->
+      <div class="flex items-center justify-between px-1 py-2 mb-5">
+        <div class="flex items-center space-x-3 min-w-0">
+          <div class="w-14 h-14 rounded-2xl bg-white border border-pastel-border p-1 flex items-center justify-center shadow-soft shrink-0 overflow-hidden">
+            <img src="assets/alfa-logo.png" alt="Alfa Company Health Logo" class="w-full h-full object-contain drop-shadow-sm">
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5 leading-tight">
+              <span>Alfa Company Health</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500 live-beacon shrink-0"></span>
+            </h1>
+            <p class="text-[11px] font-semibold text-slate-400 truncate mt-0.5">Health Monitoring &bull; Live</p>
+          </div>
+        </div>
+        <button onclick="closeMobileSidebar()" class="lg:hidden w-9 h-9 rounded-xl bg-pastel-subtle text-slate-500 flex items-center justify-center shrink-0">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="space-y-1.5">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3.5 mb-2 block">Surveillance Command</span>
+
+        <button onclick="navigateSection('overview', this)" class="side-nav-btn w-full flex items-center space-x-3.5 px-3.5 py-3 rounded-2xl text-xs font-bold nav-active transition-all group text-left">
+          <i class="fa-solid fa-chart-pie text-base w-5 text-center"></i>
+          <span>Dashboard Overview</span>
+        </button>
+
+        <button onclick="navigateSection('surveillance', this)" class="side-nav-btn w-full flex items-center space-x-3.5 px-3.5 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-pastel-lavender/40 transition-all group text-left">
+          <i class="fa-solid fa-virus-covid text-base w-5 text-center text-slate-400 group-hover:text-pastel-purple transition"></i>
+          <span>Symptom Surveillance</span>
+        </button>
+
+        <button onclick="navigateSection('roster', this)" class="side-nav-btn w-full flex items-center space-x-3.5 px-3.5 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-pastel-lavender/40 transition-all group text-left">
+          <i class="fa-solid fa-user-group text-base w-5 text-center text-slate-400 group-hover:text-pastel-purple transition"></i>
+          <span>Cadets Triage Roster</span>
+          <span class="ml-auto text-[10px] font-mono font-bold bg-pastel-lavender text-pastel-purple px-2 py-0.5 rounded-full" id="sideBadgeTotal">151</span>
+        </button>
+
+        <button onclick="filterAcuteAlerts(this)" class="side-nav-btn w-full flex items-center space-x-3.5 px-3.5 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-pastel-lavender/40 transition-all group text-left">
+          <i class="fa-solid fa-shield-virus text-base w-5 text-center text-slate-400 group-hover:text-pastel-coral transition"></i>
+          <span>Sick Call &amp; Isolation</span>
+          <span class="ml-auto text-[10px] font-mono font-bold bg-rose-50 text-pastel-coral px-2 py-0.5 rounded-full" id="sideBadgeAlert">8</span>
+        </button>
+
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3.5 pt-5 pb-2 block">Google Sheet &amp; Tools</span>
+
+        <button onclick="openSheetSettingsModal()" class="w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-pastel-lavender/40 transition-all group text-left">
+          <i class="fa-solid fa-rotate text-base w-5 text-center text-slate-400 group-hover:text-emerald-500 transition"></i>
+          <span>Live Sheet Sync Setup</span>
+          <span class="ml-auto text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full" id="sideSyncBadge">10s</span>
+        </button>
+
+        <a href="https://docs.google.com/spreadsheets/d/1-kohOuC0fSXLJVrGQNWSmyb00Ona2hBlMG-EaS3YuyQ/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-pastel-lavender/40 transition-all group text-left">
+          <i class="fa-solid fa-table text-base w-5 text-center text-slate-400 group-hover:text-pastel-purple transition"></i>
+          <span>Open Source Sheet</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-xs ml-auto text-slate-400"></i>
+        </a>
+
+        <button onclick="downloadCSVReport()" class="w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-pastel-lavender/40 transition-all group text-left">
+          <i class="fa-solid fa-file-arrow-down text-base w-5 text-center text-slate-400 group-hover:text-pastel-purple transition"></i>
+          <span>Export Symptom Logs</span>
+        </button>
+
+        <button onclick="toggleAudio()" id="soundNavBtn" class="w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-pastel-lavender/40 transition-all group text-left">
+          <i class="fa-regular fa-bell text-base w-5 text-center text-slate-400 group-hover:text-pastel-purple transition" id="soundNavIcon"></i>
+          <span>Audio Alerts</span>
+          <span class="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full" id="soundStatusLabel">ON</span>
+        </button>
+
+        <button onclick="toggleDarkMode()" id="darkModeBtn" class="w-full flex items-center space-x-3.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-pastel-lavender/40 transition-all group text-left">
+          <i class="fa-solid fa-moon text-base w-5 text-center text-slate-400 group-hover:text-amber-500 transition" id="darkModeIcon"></i>
+          <span id="darkModeLabel">Night Ops Mode</span>
+          <span class="ml-auto text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full" id="darkModePill">OFF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Alfa Company Health Command Card -->
+    <div class="mt-6 bg-gradient-to-br from-pastel-subtle to-pastel-lavender/50 p-3.5 rounded-3xl border border-pastel-border/80 flex items-center justify-between shadow-soft">
+      <div class="flex items-center space-x-3 min-w-0">
+        <div class="relative shrink-0">
+          <div class="w-12 h-12 rounded-2xl bg-white border border-pastel-border p-1 flex items-center justify-center shadow-sm overflow-hidden">
+            <img src="assets/alfa-logo.png" alt="Alfa Company Health Logo" class="w-full h-full object-contain drop-shadow-sm">
+          </div>
+          <span id="sidebarSyncDot" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+        </div>
+        <div class="overflow-hidden">
+          <h4 class="text-xs font-extrabold text-slate-900 truncate">Alfa Company Health</h4>
+          <p class="text-[10px] font-medium text-slate-400 truncate" id="sidebarSyncStatus">Google Sheet Live</p>
+        </div>
+      </div>
+      <button onclick="openSheetSettingsModal()" class="w-9 h-9 rounded-xl bg-white text-slate-400 hover:text-pastel-purple hover:bg-pastel-lavender/50 border border-slate-100 flex items-center justify-center transition shadow-sm shrink-0" title="Live Sheet Sync Settings">
+        <i class="fa-solid fa-gear text-sm"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN DASHBOARD CONTENT -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- Sticky Top Header Bar -->
+    <header class="w-full bg-white/80 backdrop-blur-xl border-b border-pastel-border/70 sticky top-0 z-20 px-4 sm:px-6 lg:px-8 py-3.5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+
+        <!-- Left: Mobile Menu + Brand Mark + Global Search -->
+        <div class="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-[220px] max-w-md">
+          <button id="openSidebarBtn" onclick="openMobileSidebar()" class="lg:hidden w-11 h-11 rounded-2xl bg-pastel-subtle border border-pastel-border text-slate-600 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-bars text-base"></i>
+          </button>
+          <div class="lg:hidden w-12 h-11 rounded-2xl bg-white border border-pastel-border p-1 flex items-center justify-center shadow-soft shrink-0">
+            <img src="assets/alfa-logo.png" alt="Alfa Company Health Logo" class="w-full h-full object-contain">
+          </div>
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-sm"></i>
+            <input type="text" id="globalSearchInput" oninput="handleGlobalSearch(this.value)" placeholder="Search cadet surname, full name, SN, class, or symptom..." class="w-full bg-pastel-subtle hover:bg-white focus:bg-white border border-pastel-border text-xs rounded-2xl pl-10 pr-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pastel-purple/40 focus:border-pastel-purple transition shadow-inner-soft">
+          </div>
+        </div>
+
+        <!-- Right: Class Scope Segmented Control, Live Sync Monitor, Bell, Primary CTA -->
+        <div class="flex items-center flex-wrap gap-2.5 sm:gap-3">
+
+          <!-- Class Scope Filter Pills (100% backed by Google Sheet Class column) -->
+          <div class="bg-pastel-subtle p-1 rounded-2xl border border-pastel-border/70 flex items-center text-xs font-semibold text-slate-500">
+            <button onclick="setClassScope('all', this)" class="class-scope-btn px-3 py-1.5 rounded-xl transition-all pill-active text-xs">All</button>
+            <button onclick="setClassScope('1CL', this)" class="class-scope-btn px-3 py-1.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 text-xs">1CL</button>
+            <button onclick="setClassScope('2CL', this)" class="class-scope-btn px-3 py-1.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 text-xs">2CL</button>
+            <button onclick="setClassScope('3CL', this)" class="class-scope-btn px-3 py-1.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 text-xs">3CL</button>
+            <button onclick="setClassScope('4CL', this)" class="class-scope-btn px-3 py-1.5 rounded-xl transition-all text-slate-600 hover:text-slate-900 text-xs">4CL</button>
+          </div>
+
+          <!-- Real-Time Sync Countdown Pill -->
+          <button onclick="openSheetSettingsModal()" class="hidden xl:flex items-center gap-2 px-3 py-2 rounded-2xl bg-pastel-subtle border border-pastel-border text-[11px] font-mono font-semibold text-slate-600 hover:border-pastel-purple/40 transition" title="Real-time Google Sheet Polling Status">
+            <span id="liveBeaconDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 live-beacon"></span>
+            <span class="uppercase text-slate-500">LIVE SYNC</span>
+            <span id="autoSyncCountdown" class="text-pastel-purple font-bold">10s</span>
+          </button>
+
+          <!-- Manual Sync Now Button -->
+          <button id="manualSyncBtn" onclick="performLiveSync(true)" class="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-pastel-lavender/40 border border-pastel-border text-xs font-bold text-slate-700 flex items-center gap-2 transition shadow-soft active:scale-95" title="Sync from Google Sheet right now">
+            <i id="manualSyncIcon" class="fa-solid fa-arrows-rotate text-sm text-pastel-purple"></i>
+            <span class="hidden sm:inline">Sync Now</span>
+          </button>
+
+          <!-- Alert Notification Bell -->
+          <button onclick="filterAcuteAlerts()" class="relative w-11 h-11 rounded-2xl bg-white hover:bg-rose-50 text-slate-600 hover:text-pastel-fever border border-pastel-border flex items-center justify-center transition shadow-soft group" title="View Acute Fever & Flu Cases">
+            <i class="fa-regular fa-bell text-base group-hover:rotate-12 transition-transform"></i>
+            <span id="bellAlertBadge" class="absolute -top-1 -right-1 min-w-[19px] h-[19px] px-1 rounded-full bg-pastel-fever text-white font-mono text-[10px] font-bold flex items-center justify-center ring-2 ring-white">8</span>
+          </button>
+
+          <!-- Primary Modal Trigger -->
+          <button onclick="openLogModal()" class="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-pastel-purple via-pastel-purple-dark to-pastel-periwinkle hover:opacity-95 text-white rounded-2xl text-xs font-bold shadow-pill flex items-center gap-2 transition transform active:scale-95">
+            <i class="fa-solid fa-plus text-sm"></i>
+            <span>Log Report</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Live Continuous Health Ticker Bar -->
+    <div class="ticker-bar bg-white/90 border-b border-pastel-border/80 px-4 sm:px-6 lg:px-8 py-2 text-xs font-mono flex items-center gap-3 overflow-hidden select-none">
+      <div class="flex items-center gap-2 text-slate-800 font-bold shrink-0 pr-3 border-r border-pastel-border">
+        <img src="assets/alfa-logo.png" alt="Alfa Health" class="w-7 h-6 object-contain shrink-0">
+        <span class="tracking-wide hidden sm:inline">ALFA COMPANY HEALTH:</span>
+        <span id="tickerSyncStatusPill" class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>LIVE</span>
+        </span>
+      </div>
+      <div class="marquee-container flex-1 overflow-hidden relative">
+        <div id="dynamicTickerContent" class="marquee-track flex items-center gap-8 text-slate-600 font-medium">
+          <!-- Dynamically populated from Google Sheet -->
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-2 text-[10px] text-slate-400 shrink-0 pl-2 border-l border-pastel-border">
+        <i class="fa-regular fa-clock text-xs"></i>
+        <span id="lastSyncedClock">Syncing...</span>
+      </div>
+    </div>
+
+    <!-- Main Scrollable Canvas -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-7 max-w-[1720px] mx-auto w-full">
+
+      <!-- ========================================================================= -->
+      <!-- ROW 1: TOP QUICK-STAT METRIC CARDS (LIVE GOOGLE SHEET COUNTS) -->
+      <!-- ========================================================================= -->
+      <section id="overviewSection" class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-pastel-lavender text-pastel-purple">Alfa Company &bull; Live Sheet</span>
+              <span id="activeScopeBadge" class="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white border border-pastel-border text-slate-500">All Classes (1CL–4CL)</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight mt-1">Alfa Company Health Monitoring &amp; Symptom Surveillance</h2>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-slate-500">
+            <span id="liveSourceBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-pastel-border font-mono text-[11px] font-semibold">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Synced with Google Sheet</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+
+          <!-- Total Cadets -->
+          <div onclick="setRosterFilter('all')" class="cursor-pointer bg-white p-5 rounded-3xl border border-pastel-border shadow-soft hover:shadow-soft-card transition-all group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Cadets</span>
+              <div class="w-10 h-10 rounded-2xl bg-purple-50 text-pastel-purple flex items-center justify-center text-lg shadow-sm group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-users-line"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 font-mono-tabular" id="statTotal">151</div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span id="statTotalSub">1CL–4CL Screened</span>
+              <span class="text-slate-500 font-semibold font-mono" id="statSymptomaticSub">52 Sym</span>
+            </div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div class="bg-pastel-purple h-full rounded-full w-full"></div>
+            </div>
+          </div>
+
+          <!-- Fit / None -->
+          <div onclick="setRosterFilter('none')" class="cursor-pointer bg-white p-5 rounded-3xl border border-pastel-border shadow-soft hover:shadow-soft-card transition-all group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Fit (None)</span>
+              <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-pastel-lime flex items-center justify-center text-lg shadow-sm group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-shield-heart"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 font-mono-tabular" id="statNone">99</div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span>Asymptomatic / Clear</span>
+              <span class="text-pastel-lime font-bold font-mono" id="statNonePct">65.6%</span>
+            </div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div id="barNone" class="bg-pastel-lime h-full rounded-full transition-all duration-500" style="width: 65.6%"></div>
+            </div>
+          </div>
+
+          <!-- Colds -->
+          <div onclick="setRosterFilter('colds')" class="cursor-pointer bg-white p-5 rounded-3xl border border-pastel-border shadow-soft hover:shadow-soft-card transition-all group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Colds</span>
+              <div class="w-10 h-10 rounded-2xl bg-blue-50 text-pastel-cobalt flex items-center justify-center text-lg shadow-sm group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-head-side-cough"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 font-mono-tabular" id="statColds">41</div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span>Nasal / URI Cases</span>
+              <span class="text-pastel-cobalt font-bold font-mono" id="statColdsPct">27.2%</span>
+            </div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div id="barColds" class="bg-pastel-cobalt h-full rounded-full transition-all duration-500" style="width: 27.2%"></div>
+            </div>
+          </div>
+
+          <!-- Cough -->
+          <div onclick="setRosterFilter('cough')" class="cursor-pointer bg-white p-5 rounded-3xl border border-pastel-border shadow-soft hover:shadow-soft-card transition-all group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Cough</span>
+              <div class="w-10 h-10 rounded-2xl bg-amber-50 text-pastel-amber flex items-center justify-center text-lg shadow-sm group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-lungs"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 font-mono-tabular" id="statCough">32</div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span>Dry / Productive</span>
+              <span class="text-pastel-amber font-bold font-mono" id="statCoughPct">21.2%</span>
+            </div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div id="barCough" class="bg-pastel-amber h-full rounded-full transition-all duration-500" style="width: 21.2%"></div>
+            </div>
+          </div>
+
+          <!-- Flu -->
+          <div onclick="setRosterFilter('flu')" class="cursor-pointer bg-white p-5 rounded-3xl border border-pastel-border shadow-soft hover:shadow-soft-card transition-all group">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Flu</span>
+              <div class="w-10 h-10 rounded-2xl bg-purple-50 text-pastel-purple flex items-center justify-center text-lg shadow-sm group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-virus"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 font-mono-tabular" id="statFlu">7</div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span>Influenza Cohort</span>
+              <span class="text-pastel-purple font-bold font-mono" id="statFluPct">4.6%</span>
+            </div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div id="barFlu" class="bg-pastel-purple h-full rounded-full transition-all duration-500" style="width: 4.6%"></div>
+            </div>
+          </div>
+
+          <!-- Fever -->
+          <div onclick="setRosterFilter('fever')" class="cursor-pointer bg-white p-5 rounded-3xl border border-pastel-border shadow-soft hover:shadow-soft-card transition-all group relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-pastel-fever flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-pastel-fever animate-ping"></span> Fever
+              </span>
+              <div class="w-10 h-10 rounded-2xl bg-rose-50 text-pastel-fever flex items-center justify-center text-lg shadow-sm group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-fire"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-extrabold text-slate-900 font-mono-tabular" id="statFever">1</div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span>Febrile Alert</span>
+              <span class="text-pastel-fever font-bold font-mono" id="statFeverPct">0.7%</span>
+            </div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div id="barFever" class="bg-pastel-fever h-full rounded-full transition-all duration-500" style="width: 0.7%"></div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- ROW 2: VISUAL HEALTH ANALYTICS (RADIAL GAUGE, CAPSULE CHART, UNIT LOAD) -->
+      <!-- ========================================================================= -->
+      <section id="analyticsSection" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Column 1 (4 cols): Radial Health Ratio Gauge -->
+        <div class="lg:col-span-4 bg-white rounded-3xl p-6 border border-pastel-border shadow-soft flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Readiness Status</span>
+                <h3 class="text-base font-extrabold text-slate-900 leading-tight">Alfa Company Health Ratio</h3>
+              </div>
+              <span id="gaugeScopeLabel" class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                151 Cadets
+              </span>
+            </div>
+
+            <!-- Radial Gauge SVG Container -->
+            <div class="relative w-48 h-48 mx-auto my-3 flex items-center justify-center">
+              <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                <!-- Outer track -->
+                <circle cx="60" cy="60" r="48" stroke="#F1ECF8" stroke-width="11" fill="none" stroke-linecap="round"></circle>
+                <!-- Acute Fever/Flu Segment -->
+                <circle id="gaugeAcuteSegment" cx="60" cy="60" r="48" stroke="#FF4757" stroke-width="11" fill="none" stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6" class="gauge-circle"></circle>
+                <!-- Main Healthy/Fit Arc -->
+                <circle id="gaugeHealthCircle" cx="60" cy="60" r="48" stroke="url(#desktopPurpleGrad)" stroke-width="11" fill="none" stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="103" class="gauge-circle"></circle>
+                <defs>
+                  <linearGradient id="desktopPurpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#8B5CF6" />
+                    <stop offset="60%" stop-color="#6366F1" />
+                    <stop offset="100%" stop-color="#10B981" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <!-- Center Readout -->
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <i class="fa-solid fa-shield-heart text-pastel-purple text-2xl mb-1"></i>
+                <span id="centerHealthIndexPct" class="text-3xl font-extrabold text-slate-900 tracking-tight font-mono">65.6%</span>
+                <span class="text-[11px] text-slate-400 font-semibold">Fit for Duty</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mutually Exclusive Cadet Tier Summary (adds up to 100% of cadets) -->
+          <div class="grid grid-cols-3 gap-2.5 pt-4 border-t border-slate-100 mt-2">
+            <button onclick="setRosterFilter('none')" class="bg-pastel-subtle hover:bg-emerald-50/70 p-3 rounded-2xl text-center border border-pastel-border/60 transition">
+              <div class="text-[10px] text-slate-400 font-semibold mb-0.5">Fit (None)</div>
+              <div class="text-xs font-bold text-emerald-600 font-mono" id="summaryHealthyCount">99 Cadets</div>
+            </button>
+            <button onclick="setRosterFilter('mild')" class="bg-pastel-subtle hover:bg-blue-50/70 p-3 rounded-2xl text-center border border-pastel-border/60 transition">
+              <div class="text-[10px] text-slate-400 font-semibold mb-0.5">Mild Only</div>
+              <div class="text-xs font-bold text-pastel-cobalt font-mono" id="summaryMildCount">44 Cadets</div>
+            </button>
+            <button onclick="setRosterFilter('acute')" class="bg-pastel-subtle hover:bg-rose-50/70 p-3 rounded-2xl text-center border border-pastel-border/60 transition">
+              <div class="text-[10px] text-slate-400 font-semibold mb-0.5">Acute (Flu/Fev)</div>
+              <div class="text-xs font-bold text-pastel-coral font-mono" id="summaryAcuteCount">8 Cadets</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Column 2 (5 cols): Capsule Bar Symptom Chart -->
+        <div class="lg:col-span-5 bg-white rounded-3xl p-6 border border-pastel-border shadow-soft flex flex-col justify-between">
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Sheet Breakdown</span>
+                <h3 class="text-base font-extrabold text-slate-900" id="chartCardTitle">Symptom Distribution by Class</h3>
+              </div>
+              <div class="bg-pastel-subtle p-1 rounded-xl border border-pastel-border/70 flex items-center text-[11px] font-semibold text-slate-500">
+                <button onclick="setChartMode('symptoms', this)" class="chart-mode-btn px-2.5 py-1 rounded-lg pill-active transition">Symptoms</button>
+                <button onclick="setChartMode('readiness', this)" class="chart-mode-btn px-2.5 py-1 rounded-lg hover:text-slate-900 transition">Fit vs Ill</button>
+                <button onclick="setChartMode('history', this)" class="chart-mode-btn px-2.5 py-1 rounded-lg hover:text-slate-900 transition">Sync Log</button>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 mb-4" id="chartCardDesc">Live counts of Colds, Cough, Flu, and Fever across 1CL, 2CL, 3CL, and 4CL from the Google Sheet.</p>
+
+            <!-- Capsule Chart Canvas -->
+            <div class="h-56 w-full relative">
+              <canvas id="desktopTrendsChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart Legend Pills -->
+          <div id="chartLegendRow" class="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-slate-500 pt-4 border-t border-slate-100 mt-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-pastel-cobalt"></span>
+              <span>Colds</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-pastel-amber"></span>
+              <span>Cough</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-pastel-purple"></span>
+              <span>Flu</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-pastel-fever"></span>
+              <span>Fever</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3 (3 cols): Class / Platoon Symptom Load & Acute Triage Watch -->
+        <div class="lg:col-span-3 bg-white rounded-3xl p-6 border border-pastel-border shadow-soft flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Unit Distribution</span>
+                <h3 class="text-base font-extrabold text-slate-900" id="unitLoadTitle">Class Symptom Load</h3>
+              </div>
+              <div class="bg-pastel-subtle p-0.5 rounded-xl border border-pastel-border/70 flex items-center text-[10px] font-bold">
+                <button onclick="setUnitBreakdownMode('class', this)" class="unit-mode-btn px-2 py-1 rounded-lg pill-active transition">Class</button>
+                <button onclick="setUnitBreakdownMode('platoon', this)" class="unit-mode-btn px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">Platoon</button>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 mb-4" id="unitLoadDesc">Symptomatic cadets vs Fit cadets across each PMA class.</p>
+
+            <!-- Stacked Unit Bars -->
+            <div id="unitLoadBarsContainer" class="space-y-4">
+              <!-- Populated dynamically from live sheet -->
+            </div>
+          </div>
+
+          <!-- Acute Triage Watch Card -->
+          <div class="bg-pastel-subtle p-3.5 rounded-2xl border border-pastel-border/80 mt-5 flex items-center justify-between gap-2">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="w-2.5 h-2.5 rounded-full bg-pastel-coral shrink-0"></span>
+              <div class="min-w-0">
+                <div class="text-xs font-bold text-slate-800 truncate">Acute Sick Call Watch</div>
+                <div class="text-[10px] text-slate-400 truncate" id="acuteWatchSubtitle">8 cadets (1 Fever, 7 Flu)</div>
+              </div>
+            </div>
+            <button onclick="filterAcuteAlerts()" class="text-[11px] font-mono font-bold text-pastel-purple bg-white px-2.5 py-1 rounded-xl border border-pastel-border hover:bg-pastel-lavender/40 transition shrink-0">
+              Inspect
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- ROW 2.5: SYMPTOM CO-OCCURRENCE MATRIX & LIVE REAL-TIME SYNC FEED -->
+      <!-- ========================================================================= -->
+      <section id="surveillanceSection" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Symptom Co-Occurrence Matrix (7 cols) -->
+        <div class="lg:col-span-7 bg-white rounded-3xl p-6 border border-pastel-border shadow-soft">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Multi-Flag Clinical Profiles</span>
+              <h3 class="text-base font-extrabold text-slate-900">Symptom Combination Breakdown</h3>
+            </div>
+            <span class="text-[11px] font-mono font-semibold text-slate-500 bg-pastel-subtle px-3 py-1 rounded-full border border-pastel-border" id="totalFlagsSummary">
+              52 Symptomatic &bull; 81 Checked Flags
+            </span>
+          </div>
+          <div id="comboMatrixGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <!-- Dynamically populated from live Google Sheet combinations -->
+          </div>
+        </div>
+
+        <!-- Real-Time Google Sheet Activity Feed (5 cols) -->
+        <div class="lg:col-span-5 bg-white rounded-3xl p-6 border border-pastel-border shadow-soft flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Telemetry Feed</span>
+                <h3 class="text-base font-extrabold text-slate-900">Real-Time Sheet Updates</h3>
+              </div>
+              <button onclick="openSheetSettingsModal()" class="text-[11px] font-bold text-pastel-purple hover:underline">
+                Configure Sync
+              </button>
+            </div>
+            <div id="liveActivityFeed" class="space-y-2 max-h-44 overflow-y-auto pr-1 text-xs">
+              <!-- Live sync events appended here -->
+            </div>
+          </div>
+          <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+            <span id="transportLabel">Transport: Connecting...</span>
+            <span id="lastDiffCountLabel">0 pending edits</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- ROW 3: CADET HEALTH TRIAGE ROSTER (LIVE GOOGLE SHEET TABLE) -->
+      <!-- ========================================================================= -->
+      <section id="rosterSection" class="bg-white rounded-3xl p-6 border border-pastel-border shadow-soft">
+
+        <!-- Header & Symptom Filter Pills -->
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-100">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="text-base font-extrabold text-slate-900">Cadet Health &amp; Symptom Roster</h3>
+              <span id="filteredCountBadge" class="text-xs font-bold font-mono px-2.5 py-0.5 rounded-full bg-pastel-lavender text-pastel-purple">
+                Showing 151 of 151 Cadets
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Synced directly with Google Sheet columns (Class, Cadet, Colds, Cough, Flu, Fever, None). Click any badge or Update to inspect.</p>
+          </div>
+
+          <!-- Symptom Filter Tab Pills -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold no-scrollbar">
+            <button onclick="setRosterFilter('all')" id="btnFilterAll" class="filter-tab-btn px-3.5 py-2 rounded-2xl transition pill-active whitespace-nowrap">
+              All (<span id="pillCountAll">151</span>)
+            </button>
+            <button onclick="setRosterFilter('none')" id="btnFilterNone" class="filter-tab-btn px-3.5 py-2 rounded-2xl transition bg-pastel-subtle text-slate-600 hover:bg-pastel-lavender/50 whitespace-nowrap">
+              Fit / None (<span id="pillCountNone">99</span>)
+            </button>
+            <button onclick="setRosterFilter('symptomatic')" id="btnFilterSymptomatic" class="filter-tab-btn px-3.5 py-2 rounded-2xl transition bg-pastel-subtle text-slate-600 hover:bg-pastel-lavender/50 whitespace-nowrap">
+              Symptomatic (<span id="pillCountSymptomatic">52</span>)
+            </button>
+            <button onclick="setRosterFilter('colds')" id="btnFilterColds" class="filter-tab-btn px-3.5 py-2 rounded-2xl transition bg-pastel-subtle text-slate-600 hover:bg-pastel-lavender/50 whitespace-nowrap">
+              Colds (<span id="pillCountColds">41</span>)
+            </button>
+            <button onclick="setRosterFilter('cough')" id="btnFilterCough" class="filter-tab-btn px-3.5 py-2 rounded-2xl transition bg-pastel-subtle text-slate-600 hover:bg-pastel-lavender/50 whitespace-nowrap">
+              Cough (<span id="pillCountCough">32</span>)
+            </button>
+            <button onclick="setRosterFilter('flu')" id="btnFilterFlu" class="filter-tab-btn px-3.5 py-2 rounded-2xl transition bg-pastel-subtle text-slate-600 hover:bg-pastel-lavender/50 whitespace-nowrap">
+              Flu (<span id="pillCountFlu">7</span>)
+            </button>
+            <button onclick="setRosterFilter('fever')" id="btnFilterFever" class="filter-tab-btn px-3.5 py-2 rounded-2xl transition bg-pastel-subtle text-slate-600 hover:bg-pastel-lavender/50 whitespace-nowrap">
+              Fever (<span id="pillCountFever">1</span>)
+            </button>
+            <button onclick="setRosterFilter('acute')" id="btnFilterAcute" class="filter-tab-btn px-3.5 py-2 rounded-2xl transition bg-pastel-subtle text-slate-600 hover:bg-pastel-lavender/50 whitespace-nowrap">
+              Acute (<span id="pillCountAcute">8</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Sub-bar: Search, Class, Platoon & Sort -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+          <div class="flex items-center space-x-3 flex-1 max-w-md">
+            <div class="relative w-full">
+              <i class="fa-solid fa-filter absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+              <input type="text" id="tableFilterInput" oninput="renderCadetTable()" placeholder="Filter list by surname, full name, SN, or symptom..." class="w-full bg-pastel-subtle border border-pastel-border text-xs rounded-2xl pl-9 pr-3 py-2.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pastel-purple/30 focus:bg-white transition">
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <div class="flex items-center gap-1.5">
+              <label class="text-xs font-semibold text-slate-400">Class:</label>
+              <select id="classDropdown" onchange="onClassDropdownChange()" class="text-xs font-semibold bg-pastel-subtle border border-pastel-border rounded-2xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-pastel-purple/30">
+                <option value="all">All Classes</option>
+                <option value="1CL">1CL</option>
+                <option value="2CL">2CL</option>
+                <option value="3CL">3CL</option>
+                <option value="4CL">4CL</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <label class="text-xs font-semibold text-slate-400">Platoon:</label>
+              <select id="platoonDropdown" onchange="renderCadetTable()" class="text-xs font-semibold bg-pastel-subtle border border-pastel-border rounded-2xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-pastel-purple/30">
+                <option value="all">All Platoons</option>
+                <option value="1st Plt">1st Platoon</option>
+                <option value="2nd Plt">2nd Platoon</option>
+                <option value="3rd Plt">3rd Platoon</option>
+                <option value="4th Plt">4th Platoon</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <label class="text-xs font-semibold text-slate-400">Sort:</label>
+              <select id="sortDropdown" onchange="renderCadetTable()" class="text-xs font-semibold bg-pastel-subtle border border-pastel-border rounded-2xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-pastel-purple/30">
+                <option value="severity">Severity (Acute First)</option>
+                <option value="sheet">Sheet Order</option>
+                <option value="name">Cadet Name (A–Z)</option>
+                <option value="class">Class (1CL–4CL)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Wide Table Container -->
+        <div class="overflow-x-auto rounded-2xl border border-slate-100">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-pastel-subtle text-slate-400 uppercase tracking-wider font-bold text-[10px] border-b border-slate-100">
+              <tr>
+                <th class="py-3.5 px-4">#</th>
+                <th class="py-3.5 px-4">Cadet Profile</th>
+                <th class="py-3.5 px-4">Class &amp; Unit</th>
+                <th class="py-3.5 px-4">Sheet Flags (Active Symptoms)</th>
+                <th class="py-3.5 px-4">Triage Tier</th>
+                <th class="py-3.5 px-4">Sync Source</th>
+                <th class="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cadetTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+      <!-- Footer -->
+      <footer class="pt-2 pb-6 text-center text-[11px] font-mono text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>Alfa Company Health Monitoring &bull; Fort Del Pilar, Baguio City</span>
+        <span>Live Google Sheet ID: <code class="text-slate-500">1-kohOuC0fSXLJVrGQNWSmyb00Ona2hBlMG-EaS3YuyQ</code></span>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. LOG / UPDATE CADET SYMPTOM REPORT MODAL (MULTI-CHECKBOX SHEET MIRROR) -->
+  <!-- ========================================================================= -->
+  <div id="logSymptomModal" class="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-sm hidden items-center justify-center p-4 transition-all">
+    <div class="bg-white w-full max-w-lg rounded-3xl p-6 shadow-soft-lg border border-pastel-border">
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-11 h-11 rounded-2xl bg-pastel-lavender text-pastel-purple flex items-center justify-center text-base shadow-sm">
+            <i class="fa-solid fa-notes-medical"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900" id="modalTitle">Update Cadet Health Flags</h3>
+            <p class="text-xs text-slate-400">Matches Google Sheet columns (Colds, Cough, Flu, Fever, None)</p>
+          </div>
+        </div>
+        <button onclick="closeLogModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form id="cadetForm" onsubmit="saveCadetReport(event)" class="space-y-4">
+        <input type="hidden" id="formOriginalKey" value="">
+        <input type="hidden" id="formOriginalClass" value="">
+        <input type="hidden" id="formOriginalCadet" value="">
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Class</label>
+            <select id="formClass" class="w-full text-xs font-bold bg-pastel-subtle border border-pastel-border rounded-2xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-pastel-purple/30 focus:outline-none">
+              <option value="1CL">1CL</option>
+              <option value="2CL">2CL</option>
+              <option value="3CL">3CL</option>
+              <option value="4CL">4CL</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Cadet Surname (Sheet Name)</label>
+            <input type="text" id="formCadet" required placeholder="e.g. ADTOON or GARCIA JL" class="w-full text-xs font-bold uppercase bg-pastel-subtle border border-pastel-border rounded-2xl px-3.5 py-2.5 focus:bg-white focus:ring-2 focus:ring-pastel-purple/30 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- 5 Independent Google Sheet Checkboxes -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-slate-600">Google Sheet Symptom Checkboxes</label>
+            <span class="text-[10px] font-mono text-slate-400">Multi-select supported</span>
+          </div>
+          <div class="grid grid-cols-5 gap-2">
+            <label class="cursor-pointer">
+              <input type="checkbox" id="chkColds" class="sr-only peer" onchange="onModalCheckboxChange('symptom')">
+              <div class="p-3 rounded-2xl text-center border border-pastel-border bg-pastel-subtle peer-checked:bg-pastel-cobalt peer-checked:text-white peer-checked:border-pastel-cobalt peer-checked:shadow-sm transition">
+                <i class="fa-solid fa-head-side-cough text-lg mb-1.5 block"></i>
+                <span class="text-[10px] font-bold block">Colds</span>
+              </div>
+            </label>
+
+            <label class="cursor-pointer">
+              <input type="checkbox" id="chkCough" class="sr-only peer" onchange="onModalCheckboxChange('symptom')">
+              <div class="p-3 rounded-2xl text-center border border-pastel-border bg-pastel-subtle peer-checked:bg-pastel-amber peer-checked:text-white peer-checked:border-pastel-amber peer-checked:shadow-sm transition">
+                <i class="fa-solid fa-lungs text-lg mb-1.5 block"></i>
+                <span class="text-[10px] font-bold block">Cough</span>
+              </div>
+            </label>
+
+            <label class="cursor-pointer">
+              <input type="checkbox" id="chkFlu" class="sr-only peer" onchange="onModalCheckboxChange('symptom')">
+              <div class="p-3 rounded-2xl text-center border border-pastel-border bg-pastel-subtle peer-checked:bg-pastel-purple peer-checked:text-white peer-checked:border-pastel-purple peer-checked:shadow-sm transition">
+                <i class="fa-solid fa-virus text-lg mb-1.5 block"></i>
+                <span class="text-[10px] font-bold block">Flu</span>
+              </div>
+            </label>
+
+            <label class="cursor-pointer">
+              <input type="checkbox" id="chkFever" class="sr-only peer" onchange="onModalCheckboxChange('symptom')">
+              <div class="p-3 rounded-2xl text-center border border-pastel-border bg-pastel-subtle peer-checked:bg-pastel-fever peer-checked:text-white peer-checked:border-pastel-fever peer-checked:shadow-sm transition">
+                <i class="fa-solid fa-fire text-lg mb-1.5 block"></i>
+                <span class="text-[10px] font-bold block">Fever</span>
+              </div>
+            </label>
+
+            <label class="cursor-pointer">
+              <input type="checkbox" id="chkNone" class="sr-only peer" checked onchange="onModalCheckboxChange('none')">
+              <div class="p-3 rounded-2xl text-center border border-pastel-border bg-pastel-subtle peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-emerald-500 peer-checked:shadow-sm transition">
+                <i class="fa-solid fa-shield-heart text-lg mb-1.5 block"></i>
+                <span class="text-[10px] font-bold block">None</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Write-back Notice Banner -->
+        <div id="modalWritebackBanner" class="p-3 rounded-2xl bg-pastel-subtle border border-pastel-border text-[11px] text-slate-600 flex items-start gap-2.5">
+          <i class="fa-solid fa-circle-info text-pastel-purple text-sm mt-0.5"></i>
+          <div id="modalWritebackText">
+            Checking write-back configuration...
+          </div>
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="pt-1 flex items-center gap-3">
+          <button type="button" onclick="closeLogModal()" class="flex-1 py-3 rounded-2xl bg-pastel-subtle hover:bg-slate-200 text-slate-600 text-xs font-bold transition">
+            Cancel
+          </button>
+          <button type="submit" id="modalSaveBtn" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-pastel-purple to-pastel-periwinkle hover:opacity-95 text-white text-xs font-bold shadow-pill transition active:scale-95">
+            Save Health Report
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 4. LIVE GOOGLE SHEET SYNC & TWO-WAY SETUP MODAL -->
+  <!-- ========================================================================= -->
+  <div id="sheetSettingsModal" class="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-sm hidden items-center justify-center p-4 transition-all">
+    <div class="bg-white w-full max-w-2xl rounded-3xl p-6 shadow-soft-lg border border-pastel-border max-h-[90vh] overflow-y-auto space-y-5">
+
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+            <i class="fa-solid fa-table-cells"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Real-Time Google Sheet Integration</h3>
+            <p class="text-xs text-slate-400">Live polling &amp; optional two-way write-back to your spreadsheet</p>
+          </div>
+        </div>
+        <button onclick="closeSheetSettingsModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- Connection Diagnostics -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div class="p-3.5 rounded-2xl bg-pastel-subtle border border-pastel-border space-y-1">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Connected Spreadsheet</div>
+          <div class="font-mono font-bold text-slate-800 truncate">1-kohOuC0fSXLJVrGQNWSmyb00Ona2hBlMG-EaS3YuyQ</div>
+          <a href="https://docs.google.com/spreadsheets/d/1-kohOuC0fSXLJVrGQNWSmyb00Ona2hBlMG-EaS3YuyQ/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="text-[11px] font-bold text-pastel-purple hover:underline inline-flex items-center gap-1">
+            <span>Open in Google Sheets</span>
+            <i class="fa-solid fa-external-link-alt text-[10px]"></i>
+          </a>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-pastel-subtle border border-pastel-border space-y-1">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Polling Interval</div>
+          <div class="flex items-center gap-2 pt-0.5">
+            <select id="pollIntervalSelect" onchange="changePollInterval(this.value)" class="flex-1 text-xs font-bold bg-white border border-pastel-border rounded-xl px-3 py-1.5">
+              <option value="5000">Every 5 seconds (Fast Live)</option>
+              <option value="10000" selected>Every 10 seconds (Real-Time)</option>
+              <option value="30000">Every 30 seconds</option>
+              <option value="60000">Every 60 seconds</option>
+              <option value="0">Manual Sync Only</option>
+            </select>
+            <button onclick="performLiveSync(true)" class="px-3 py-1.5 rounded-xl bg-pastel-purple text-white font-bold text-xs">Sync</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-Way Write-Back Setup -->
+      <div class="p-4 rounded-2xl bg-pastel-subtle border border-pastel-border space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h4 class="text-xs font-extrabold text-slate-900">Two-Way Sync: Push Website Edits to Google Sheet</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Reading from the sheet works automatically in real time. To also write edits made on this website back into the Google Sheet, connect a 1-minute Apps Script Web App URL (or Vercel Service Account).</p>
+          </div>
+          <span id="writebackStatusPill" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-slate-200 text-slate-600 shrink-0">READ-ONLY</span>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-[11px] font-bold text-slate-600">Google Apps Script Web App URL (optional)</label>
+          <div class="flex gap-2">
+            <input type="url" id="appsScriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 text-xs font-mono bg-white border border-pastel-border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pastel-purple/30">
+            <button onclick="saveAppsScriptUrl()" class="px-4 py-2 rounded-xl bg-pastel-purple text-white text-xs font-bold hover:opacity-90 transition">Save</button>
+            <button onclick="clearAppsScriptUrl()" class="px-3 py-2 rounded-xl bg-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-300 transition">Clear</button>
+          </div>
+        </div>
+
+        <details class="text-xs">
+          <summary class="cursor-pointer font-bold text-pastel-purple hover:underline select-none">How to enable instant write-back in 60 seconds (Apps Script instructions)</summary>
+          <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-600 mt-2 leading-relaxed">
+            <li>Open your Google Sheet and click <strong>Extensions &rarr; Apps Script</strong>.</li>
+            <li>Paste the code from <code class="px-1 py-0.5 rounded bg-white border">google-apps-script/Code.gs</code> (or click Copy Code below).</li>
+            <li>Click <strong>Deploy &rarr; New deployment &rarr; Web app</strong>, set Execute as <strong>Me</strong> and Who has access to <strong>Anyone</strong>.</li>
+            <li>Copy the generated <code class="px-1 py-0.5 rounded bg-white border">/exec</code> URL and paste it above (or set <code class="px-1 py-0.5 rounded bg-white border">APPS_SCRIPT_WEBHOOK_URL</code> in Vercel Environment Variables).</li>
+          </ol>
+          <button type="button" onclick="copyAppsScriptSnippet()" class="mt-2 px-3 py-1.5 rounded-xl bg-white border border-pastel-border text-xs font-bold text-slate-700 hover:bg-pastel-lavender/40 transition inline-flex items-center gap-1.5">
+            <i class="fa-regular fa-copy text-sm"></i>
+            <span>Copy Code.gs to Clipboard</span>
+          </button>
+        </details>
+      </div>
+
+      <div class="flex justify-end">
+        <button onclick="closeSheetSettingsModal()" class="px-5 py-2.5 rounded-2xl bg-slate-900 text-white text-xs font-bold hover:opacity-90 transition">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Soft Toast Message Container -->
+  <div id="desktopToast" class="fixed bottom-6 right-6 z-50 bg-white/95 backdrop-blur-md border border-pastel-border px-4 py-3 rounded-2xl shadow-soft-lg flex items-center space-x-3 transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none max-w-sm">
+    <div id="toastIconWrap" class="w-9 h-9 rounded-xl bg-pastel-lavender text-pastel-purple flex items-center justify-center text-sm shrink-0">
+      <i class="fa-solid fa-check"></i>
+    </div>
+    <div class="text-xs min-w-0">
+      <div id="toastTitle" class="font-extrabold text-slate-800 truncate">Synced</div>
+      <div id="toastDesc" class="text-slate-400 break-words">Live Google Sheet verified.</div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js?v=1.0"></script>
+  <script src="js/sync.js?v=1.0"></script>
+  <script src="js/app.js?v=1.0"></script>
+</body>
+</html>
